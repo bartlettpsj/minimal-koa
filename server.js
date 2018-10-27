@@ -1,13 +1,15 @@
 // Configuration
-const API_PORT = 3200;
+const API_PORT = 3000;
 const API_ENDPOINT = 'api';
 
 const Koa = require('koa');
 const Router = require('koa-router');
 const app = new Koa();
-const router = new Router({ prefix: `/${API_ENDPOINT}`});
+const router = new Router({prefix: `/${API_ENDPOINT}`});
 
-router.get('/data/:id', async (ctx, next) => { ctx.body = { greeting: "hello" } });
+router.get('/data/:id', async (ctx, next) => {
+  ctx.body = {greeting: "hello"}
+});
 
 app
   .use(router.routes())
