@@ -77,7 +77,7 @@ app
         const db = await connectToDb(dbName);
         const result = await db.collection(collectionName).insertOne(body);
         console.log(result);
-        ctx.body = result;
+        ctx.body = result.ops;
 
         break;
       }
@@ -88,6 +88,13 @@ app
         if (!documentId) {
           ctx.throw(HttpStatus.BAD_REQUEST, 'Document not specified');
         }
+
+        const db = await connectToDb(dbName);
+        const query = { _id: ObjectID(documentId) };        
+        const result = await db.collection(collectionName).updateOne(query, {$set: body}, { upsert: true });
+        console.log(result);
+        ctx.body = result;
+
         break;
       }
       case 'DELETE': {
