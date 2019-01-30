@@ -53,14 +53,17 @@ app
 
     switch (method) {
       case 'GET': {
+        // get record using id (if specified) and filter (if specified)
         console.log('GET request');
         break;
-      }
+      }      
       case 'POST': {
+        // Perform database insert
         console.log('POST request');
         break;
       }
       case 'PUT': {
+        // Effectively an upszert
         console.log('PUT request');
         break;
       }
