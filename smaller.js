@@ -1,6 +1,7 @@
 const app = new (require('koa'))();
 const _ = require('lodash');
-const bodyParser = require('koa-bodyparser')
+const bodyParser = require('koa-bodyparser');
+var HttpStatus = require('http-status-codes');
 
 const addTrailingSlash = (part) => part.substr(-1) != '/' ? part + '/' : part;
 const addLeadingSlash = (part) => part.substr(0,1) != '/' ? '/' + part : part;
@@ -8,6 +9,10 @@ const addLeadingSlash = (part) => part.substr(0,1) != '/' ? '/' + part : part;
 const port = process.argv[2] || 3000;
 const endpoint = process.argv[3] || 'api';
 const fullendpoint = addTrailingSlash(addLeadingSlash(endpoint));
+const restError = (ctx, status, message) => { 
+  ctx.status = status;
+  ctx.body = message;
+};
 
 app.listen(port);
 
@@ -34,6 +39,15 @@ app
     const pathParts = requestPath.split('/');
     const collectionName = pathParts[0];
     const documentId = pathParts[1];    
+
+    // Make sure no more parts to path - convert to REST error in future
+    if (pathParts[2]) {
+      // return restError(ctx, HttpStatus.BAD_REQUEST, 'Too many parts to path');
+      ctx.throw(HttpStatus.BAD_REQUEST, 'Too many parts to path');
+    }
+
+    // Get the filter - from body or parameters
+    const filter = '';
     
     ctx.body = msg; // response with what we were sent as string
 
@@ -46,6 +60,17 @@ app
         console.log('POST request');
         break;
       }
+      case 'PUT': {
+        console.log('PUT request');
+        break;
+      }
+      case 'DELETE': {
+        console.log('DELETE request');
+
+        // currently only support delete individual and no filter parameter allowed
+        break;
+      }
+
       default: {
         console.log(`${method} method is not supported`);
       }
