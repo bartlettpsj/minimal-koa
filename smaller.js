@@ -123,5 +123,3 @@ app
   });
 
   console.log(`Koa listening at http://localhost:${port}/${endpoint}`);
-
-// const async
