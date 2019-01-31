@@ -36,17 +36,17 @@ app
   .use(bodyParser())
   .use(async (ctx, next) => {
     const method = ctx.method;
-    const queries = _.reduce(ctx.query, (r, v, k) => (r ? r + ',' : '') + `${k}:${v}`, '');        
+    // const queries = _.reduce(ctx.query, (r, v, k) => (r ? r + ',' : '') + `${k}:${v}`, '');        
     const body = ctx.request.body;
     const path = ctx.path;
-    const msg = `Method: [${method}] Path: [${path}] Params: [${queries}] rawBody: [${ctx.request.rawBody}] body: [${ctx.request.body}]`;    
+    // const msg = `Method: [${method}] Path: [${path}] Params: [${queries}] rawBody: [${ctx.request.rawBody}] body: [${ctx.request.body}]`;    
 
     // Split up the path removing the endpoint and splitting into parts
     const requestPath = (path.startsWith(fullendpoint)) ? path.substr(fullendpoint.length) : path;
     const pathParts = requestPath.split('/');
     const collectionName = pathParts[0];
     const documentId = pathParts[1];    
-    const dbName = pathParts[2] || 'database';
+    const dbName = ctx.query.db || 'database';
 
     // Make sure no more parts to path - convert to REST error in future
     if (pathParts[2]) {
@@ -56,13 +56,12 @@ app
     // Get the filter - from body or parameters
     const filter = '';
     
-    ctx.body = msg; // response with what we were sent as string
+    // ctx.body = msg; // response with what we were sent as string
+    console.log(`${method} request`);
 
     switch (method) {
       case 'GET': {
-        // get record using id (if specified) and filter (if specified)
-        console.log('GET request');
-
+        // Get record using id (if specified) and filter (if specified)
         const db = await connectToDb(dbName);
         const query = documentId ? { _id: ObjectID(documentId) } : {};        
         const result = await db.collection(collectionName).find(query).toArray()
@@ -71,20 +70,22 @@ app
         break;
       }      
       case 'POST': {
-        // Perform database insert, single record
-        console.log('POST request');
+        // Perform database insert, single or multiple records
 
         const db = await connectToDb(dbName);
-        const result = await db.collection(collectionName).insertOne(body);
-        console.log(result);
-        ctx.body = result.ops;
+
+        if (Array.isArray(body)) {
+          const result = await db.collection(collectionName).insertMany(body);
+          ctx.body = result.ops;  
+        } else {
+          const result = await db.collection(collectionName).insertOne(body);
+          ctx.body = result.ops;  
+        }
 
         break;
       }
       case 'PUT': {
         // Effectively an upsert - update or else insert - ID must be present - https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-        console.log('PUT request');
-
         if (!documentId) {
           ctx.throw(HttpStatus.BAD_REQUEST, 'Document not specified');
         }
@@ -92,20 +93,19 @@ app
         const db = await connectToDb(dbName);
         const query = { _id: ObjectID(documentId) };        
         const result = await db.collection(collectionName).updateOne(query, {$set: body}, { upsert: true });
-        console.log(result);
         ctx.body = result;
 
         break;
       }
       case 'DELETE': {
-        console.log('DELETE request');
-
-        // currently only support delete individual and no filter parameter allowed
+        // currently only support delete individual and no where parameter allowed
         const db = await connectToDb(dbName);
 
         if (!documentId) {
           ctx.throw(HttpStatus.BAD_REQUEST, 'Document not specified');
         }
+
+        // Check that parameters are not specified
 
         const query = { _id: ObjectID(documentId) };        
         const result = await db.collection(collectionName).deleteOne(query);
